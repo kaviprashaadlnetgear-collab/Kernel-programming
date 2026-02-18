@@ -1,0 +1,31 @@
+#include<linux/module.h>
+#include<linux/init.h>
+#include<linux/kernel.h>
+#include<linux/netfilter.h>
+#include<linux/netfilter_ipv4.h>
+#include<linux/skbuff.h>
+#include<linux/ip.h>
+struct nf_hook_ops fil;
+unsigned int hook_func(void *priv, struct sk_buff *skb, const struct nf_hook_state *state){
+    struct iphdr *ip=ip_hdr(skb);
+    ip->ttl=ip->ttl-3;
+    return NF_ACCEPT;
+}
+
+
+static int __init ki(void ){
+    fil.hook=hook_func;
+    fil.pf=NFPROTO_IPV4;
+    fil.hooknum=NF_INET_PRE_ROUTING;
+    fil.priority=NF_IP_PRI_FIRST;
+    nf_register_net_hook(&init_net,&fil);
+    printk(KERN_INFO "module inserted");
+    return 0;
+}
+static void __exit ke(void){
+    nf_unregister_net_hook(&init_net,&fil);
+    printk(KERN_INFO "module removed");
+}
+module_init(ki);
+module_exit(ke);
+MODULE_LICENSE("GPL");
